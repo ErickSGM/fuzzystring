@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using LanguageExt;
 
 namespace FuzzyString
 {
     public static partial class ComparisonMetrics
     { 
-        public static bool ApproximatelyEquals(this string source, string target,  FuzzyStringComparisonTolerance tolerance, params FuzzyStringComparisonOptions[] options)
+        public static Option<ComparisonResult> ApproximatelyEquals(this string source, string target,  FuzzyStringComparisonTolerance tolerance, params FuzzyStringComparisonOptions[] options)
         {
             List<double> comparisonResults = new List<double>();
 
@@ -86,52 +85,21 @@ namespace FuzzyString
 
             if (comparisonResults.Count == 0)
             {
-                return false;
+                return null;
             }
+            
+            var average = comparisonResults.Average();
+            var success = new ComparisonResult(average, true);
+            var failure = new ComparisonResult(average, false);
 
-            if (tolerance == FuzzyStringComparisonTolerance.Strong)
+            return MatchesMinimumTolerance(average, Helper.MinimumTolerance[tolerance]) ? success : failure;
+        }
+
+        private static bool MatchesMinimumTolerance(double actualAverage, double minAverage)
+        {
+            if (actualAverage < minAverage)
             {
-                if (comparisonResults.Average() < 0.25)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else if (tolerance == FuzzyStringComparisonTolerance.Normal)
-            {
-                if (comparisonResults.Average() < 0.5)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else if (tolerance == FuzzyStringComparisonTolerance.Weak)
-            {
-                if (comparisonResults.Average() < 0.75)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else if (tolerance == FuzzyStringComparisonTolerance.Manual)
-            {
-                if (comparisonResults.Average() > 0.6)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return true;
             }
             else
             {
